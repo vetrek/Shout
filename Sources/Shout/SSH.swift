@@ -63,8 +63,39 @@ public class SSH {
     ///   - publicKey: the path to the public key; defaults to private key path + ".pub"
     ///   - passphrase: the passphrase encrypting the key; defaults to nil
     /// - Throws: SSHError if authentication fails
-    public func authenticate(username: String, privateKey: String, publicKey: String? = nil, passphrase: String? = nil) throws {
-        let key = SSHKey(privateKey: privateKey, publicKey: publicKey, passphrase: passphrase)
+    public func authenticate(
+        username: String,
+        privateKeyPath: String,
+        publicKeyPath: String? = nil,
+        passphrase: String? = nil
+    ) throws {
+        let key = try SSHKey(
+            privateKeyPath: privateKeyPath,
+            publicKeyPath: publicKeyPath,
+            passphrase: passphrase
+        )
+        try authenticate(username: username, authMethod: key)
+    }
+    
+    /// Authenticate the session using a public/private key pair
+    ///
+    /// - Parameters:
+    ///   - username: the username to login with
+    ///   - privateKey: the private key string representation
+    ///   - publicKey: the public key string representation
+    ///   - passphrase: the passphrase encrypting the key; defaults to nil
+    /// - Throws: SSHError if authentication fails
+    public func authenticate(
+        username: String,
+        privateKey: String,
+        publicKey: String,
+        passphrase: String? = nil
+    ) throws {
+        let key = SSHKey(
+            privateKey: privateKey,
+            publicKey: publicKey,
+            passphrase: passphrase
+        )
         try authenticate(username: username, authMethod: key)
     }
     
@@ -226,6 +257,11 @@ public class SSH {
     /// - Throws: SSHError if an SFTP session could not be opened
     public func openSftp() throws -> SFTP {
         return try session.openSftp()
+    }
+    
+    /// Sisconnect SSH session
+    public func disconnect() throws {
+        try session.disconect()
     }
     
 }

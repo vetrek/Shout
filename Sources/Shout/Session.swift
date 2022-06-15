@@ -83,6 +83,16 @@ class Session {
         agent = newAgent
         return newAgent
     }
+
+    func disconect() throws {
+        let code = libssh2_session_disconnect_ex(
+            cSession,
+            0,
+            "normal",
+            "EN"
+        )
+        try SSHError.check(code: code, session: cSession)
+    }
     
     deinit {
         libssh2_session_free(cSession)

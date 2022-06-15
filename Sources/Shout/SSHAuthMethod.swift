@@ -69,47 +69,52 @@ public struct SSHKey: SSHAuthMethod {
     ///   - privateKey: the path to the private key
     ///   - publicKey: the path to the public key; defaults to private key path + ".pub"
     ///   - passphrase: the passphrase encrypting the key; defaults to nil
-    public init(privateKey: String, publicKey: String? = nil, passphrase: String? = nil) {
-        self.privateKey = NSString(string: privateKey).expandingTildeInPath
-        if let publicKey = publicKey {
-            self.publicKey = NSString(string: publicKey).expandingTildeInPath
+    public init(privateKeyPath: String, publicKeyPath: String? = nil, passphrase: String? = nil) throws {
+        self.privateKey = try String(contentsOfFile: NSString(string: privateKeyPath).expandingTildeInPath)
+        if let publicKeyPath = publicKeyPath {
+            self.publicKey = try String(contentsOfFile: NSString(string: publicKeyPath).expandingTildeInPath)
         } else {
             self.publicKey = self.privateKey + ".pub"
         }
         self.passphrase = passphrase
     }
     
+    /// Creates a new key-based authentication
+    ///
+    /// - Parameters:
+    ///   - privateKey: the private key string
+    ///   - publicKey: the publicKey string
+    ///   - passphrase: the passphrase encrypting the key; defaults to nil
+    public init(privateKey: String, publicKey: String, passphrase: String? = nil) {
+        self.privateKey = privateKey
+        self.publicKey = publicKey
+        self.passphrase = passphrase
+    }
+    
     public func authenticate(ssh: SSH, username: String) throws {
-        // If programatically given a passphrase, use it
-        if let passphrase = passphrase {
-            try ssh.session.authenticate(username: username,
-                                             privateKey: privateKey,
-                                             publicKey: publicKey,
-                                             passphrase: passphrase)
-            return
-        }
-        
-        // Otherwise, try logging in without any passphrase
-        do {
-            try ssh.session.authenticate(username: username,
-                                             privateKey: privateKey,
-                                             publicKey: publicKey,
-                                             passphrase: nil)
-            return
-        } catch {}
+        try ssh.session.authenticate(
+            username: username,
+            privateKey: privateKey,
+            publicKey: publicKey,
+            passphrase: passphrase
+        )
         
         // If that doesn't work, try using the Agent in case the passphrase has been saved there
-        do {
-            try SSHAgent().authenticate(ssh: ssh, username: username)
-            return
-        } catch {}
-        
-        // Finally, as a fallback, ask for the passphrase
-        let enteredPassphrase = String(cString: getpass("Enter passphrase for \(privateKey) (empty for no passphrase):"))
-        try ssh.session.authenticate(username: username,
-                                         privateKey: privateKey,
-                                         publicKey: publicKey,
-                                         passphrase: enteredPassphrase)
+//        do {
+//            try SSHAgent().authenticate(ssh: ssh, username: username)
+//            return
+//        } catch {
+//            print(error)
+//        }
+//
+//        // Finally, as a fallback, ask for the passphrase
+//        let enteredPassphrase = String(cString: getpass("Enter passphrase for \(privateKey) (empty for no passphrase):"))
+//        try ssh.session.authenticate(
+//            username: username,
+//            privateKey: privateKey,
+//            publicKey: publicKey,
+//            passphrase: enteredPassphrase
+//        )
     }
     
 }
